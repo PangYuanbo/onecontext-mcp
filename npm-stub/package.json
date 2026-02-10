@@ -1,0 +1,32 @@
+{
+  "name": "onecontext-mcp",
+  "version": "0.0.1",
+  "description": "Name placeholder for OneContext MCP. Install @pangyuanbo/onecontext-mcp for the actual MCP server.",
+  "license": "MIT",
+  "author": "PangYuanbo",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "onecontext-mcp": "bin/onecontext-mcp.js"
+  },
+  "files": [
+    "README.md",
+    "bin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PangYuanbo/onecontext-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PangYuanbo/onecontext-mcp/issues"
+  },
+  "homepage": "https://github.com/PangYuanbo/onecontext-mcp#readme",
+  "keywords": [
+    "mcp",
+    "agent",
+    "context",
+    "gcc"
+  ]
+}
+
