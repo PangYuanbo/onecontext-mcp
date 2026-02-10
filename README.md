@@ -66,6 +66,8 @@ Your `~/.npmrc` must also include an auth token, for example:
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
+The token must have `read:packages` permission.
+
 2) Install (global) or run via npx:
 
 ```bash
