@@ -31,6 +31,7 @@ export function mergeBranch(opts) {
         cwd,
         branch: intoBranch,
         summary: mergeSummary,
+        kind: "merge",
         details,
         maxInlineChars,
     });
@@ -51,6 +52,6 @@ export function mergeBranch(opts) {
             }
         }
     }
-    return { ...record, kind: "merge" };
+    return record;
 }
 //# sourceMappingURL=merge.js.map

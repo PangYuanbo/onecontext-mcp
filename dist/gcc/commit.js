@@ -12,7 +12,7 @@ function makeCommitId() {
     return `c_${ts}_${randomUUID().slice(0, 8)}`;
 }
 export function commitMilestone(opts) {
-    const { cwd, branch, summary, details, maxInlineChars = 4000 } = opts;
+    const { cwd, branch, summary, kind = "commit", details, maxInlineChars = 4000 } = opts;
     const id = makeCommitId();
     const ts = nowIso();
     const git = getGitSnapshot(cwd);
@@ -20,7 +20,7 @@ export function commitMilestone(opts) {
     const record = {
         id,
         ts,
-        kind: "commit",
+        kind,
         branch,
         summary: summary.trim(),
         details: detailsText || undefined,
@@ -49,7 +49,7 @@ export function commitMilestone(opts) {
     mdLines.push("");
     appendText(commitMdPath, `${mdLines.join("\n")}\n`);
     const logPath = gccBranchLogJsonlPath(cwd, branch);
-    appendText(logPath, `${JSON.stringify({ ts, kind: "commit", id: record.id, summary: record.summary })}\n`);
+    appendText(logPath, `${JSON.stringify({ ts, kind: record.kind, id: record.id, summary: record.summary })}\n`);
     const meta = loadBranchMetadata(cwd, branch);
     const updated = {
         ...meta,

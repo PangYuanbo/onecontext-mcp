@@ -3,6 +3,7 @@ export type CommitOptions = {
     cwd: string;
     branch: string;
     summary: string;
+    kind?: "commit" | "merge";
     details?: string;
     updateMain?: boolean;
     maxInlineChars?: number;

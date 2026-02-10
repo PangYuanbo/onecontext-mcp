@@ -1,4 +1,4 @@
-export type SegmentMode = "chat" | "replay" | "raw";
+export type SegmentMode = "chat" | "replay" | "raw" | "gcc";
 export type SegmentEvent = {
     ts?: string;
     kind: "message" | "tool_call" | "tool_result" | "meta";
@@ -13,26 +13,43 @@ export type SegmentEvent = {
     };
     meta?: Record<string, unknown>;
 };
+export type SegmentSource = {
+    type: "codex_session";
+    sessionPath: string;
+    startLine: number;
+    endLine: number;
+} | {
+    type: "gcc_commits";
+    branch: string;
+    fromCommitId: string;
+    toCommitId: string;
+    commitIds: string[];
+    includeMerges: boolean;
+    gitDiff?: {
+        fromSha: string;
+        toSha: string;
+        statBlobSha256?: string;
+        patchBlobSha256?: string;
+    };
+};
+export type SegmentStats = {
+    rawLines?: number;
+    parsedRecords?: number;
+    events?: number;
+    messages?: number;
+    toolCalls?: number;
+    toolResults?: number;
+    imagesRedacted?: number;
+    blobsWritten?: number;
+    commits?: number;
+    merges?: number;
+};
 export type SegmentMeta = {
     id: string;
     createdAt: string;
-    source: {
-        type: "codex_session";
-        sessionPath: string;
-        startLine: number;
-        endLine: number;
-    };
+    source: SegmentSource;
     mode: SegmentMode;
-    stats: {
-        rawLines: number;
-        parsedRecords: number;
-        events: number;
-        messages: number;
-        toolCalls: number;
-        toolResults: number;
-        imagesRedacted: number;
-        blobsWritten: number;
-    };
+    stats: SegmentStats;
     blobs: {
         sha256: string;
         relPath: string;

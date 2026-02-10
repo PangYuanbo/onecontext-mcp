@@ -13,6 +13,7 @@ export type CommitOptions = {
   cwd: string;
   branch: string;
   summary: string;
+  kind?: "commit" | "merge";
   details?: string;
   updateMain?: boolean;
   maxInlineChars?: number;
@@ -38,7 +39,7 @@ function makeCommitId(): string {
 }
 
 export function commitMilestone(opts: CommitOptions): CommitRecord {
-  const { cwd, branch, summary, details, maxInlineChars = 4000 } = opts;
+  const { cwd, branch, summary, kind = "commit", details, maxInlineChars = 4000 } = opts;
   const id = makeCommitId();
   const ts = nowIso();
   const git = getGitSnapshot(cwd);
@@ -48,7 +49,7 @@ export function commitMilestone(opts: CommitOptions): CommitRecord {
   const record: CommitRecord = {
     id,
     ts,
-    kind: "commit",
+    kind,
     branch,
     summary: summary.trim(),
     details: detailsText || undefined,
@@ -84,7 +85,7 @@ export function commitMilestone(opts: CommitOptions): CommitRecord {
   const logPath = gccBranchLogJsonlPath(cwd, branch);
   appendText(
     logPath,
-    `${JSON.stringify({ ts, kind: "commit", id: record.id, summary: record.summary })}\n`
+    `${JSON.stringify({ ts, kind: record.kind, id: record.id, summary: record.summary })}\n`
   );
 
   const meta = loadBranchMetadata(cwd, branch);

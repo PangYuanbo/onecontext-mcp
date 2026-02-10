@@ -53,6 +53,7 @@ export function mergeBranch(opts: MergeOptions): CommitRecord {
     cwd,
     branch: intoBranch,
     summary: mergeSummary,
+    kind: "merge",
     details,
     maxInlineChars,
   });
@@ -78,5 +79,5 @@ export function mergeBranch(opts: MergeOptions): CommitRecord {
     }
   }
 
-  return { ...record, kind: "merge" };
+  return record;
 }

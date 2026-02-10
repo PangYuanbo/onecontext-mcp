@@ -1,6 +1,6 @@
 # OneContext MCP
 
-Git-style context control for LLM agents (GCC). Forwarding is done by creating GCC commits and sharing the commit id.
+Git-style context control for LLM agents (GCC). Forwarding is done by exporting a bounded commit range into a segment and sharing the segment id.
 
 This project MCP-ifies ideas from:
 - Git-Context-Controller (GCC): COMMIT / BRANCH / MERGE / CONTEXT
@@ -14,9 +14,11 @@ This project MCP-ifies ideas from:
   - create/checkout branches
   - commit milestones
   - merge branches
+  - list/search commits (to pick a range)
+  - export a bounded commit range into a segment (events + transcript)
   - retrieve context at multiple granularities
   - (optional) import a slice of a Codex `*.jsonl` session file into a segment (events + transcript)
-- Exposes MCP resources so another agent can read a commit by id: `onecontext://gcc/commit/{id}`.
+- Exposes MCP resources so another agent can read commits by id (`onecontext://gcc/commit/{id}`) or exported segments (`onecontext://segment/{id}/...`).
 
 ## File Layout
 
@@ -62,6 +64,9 @@ node dist/index.js
 - `gcc-commit`
 - `gcc-merge`
 - `gcc-context`
+- `gcc-list-commits`
+- `gcc-search-commits`
+- `gcc-export`
 - `forward-codex-session-segment` (optional helper)
 
 ## MCP Resources

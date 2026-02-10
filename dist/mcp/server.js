@@ -8,15 +8,20 @@ import { commitMilestone } from "../gcc/commit.js";
 import { mergeBranch } from "../gcc/merge.js";
 import { getContext } from "../gcc/context.js";
 import { findCommitRecord } from "../gcc/lookup.js";
+import { listCommitRecords, searchCommitRecords } from "../gcc/commits.js";
+import { exportCommitRange } from "../gcc/export.js";
+import { loadState } from "../gcc/state.js";
 import { ensureDir, listDirNames, pathExists, readText } from "../util/fs.js";
+import { truncateEnd } from "../util/text.js";
 import { forwardCodexSessionSegment } from "../codex/forward.js";
 function buildAboutText() {
     return [
         "OneContext MCP provides Git-style context control for LLM agents (GCC).",
-        "It also supports forwarding slices of Codex session *.jsonl files into shareable segments.",
+        "Forwarding is done by exporting a bounded commit range into a shareable segment.",
         "",
         "Core actions: gcc-init / gcc-branch / gcc-checkout / gcc-commit / gcc-merge / gcc-context",
-        "Sharing: use gcc-commit to create a checkpoint, then share the commit id",
+        "Forwarding: gcc-export (range -> segment) + segment resources",
+        "Optional helpers: forward-codex-session-segment (import raw Codex logs into a segment)",
     ].join("\n");
 }
 function buildInstructionsText() {
@@ -29,10 +34,11 @@ function buildInstructionsText() {
         "4) Merge experiments: gcc-merge",
         "5) Retrieve context: gcc-context or read resources under onecontext://gcc/...",
         "",
-        "Forward memory to another agent:",
-        "- callTool gcc-commit (write a clean summary + evidence)",
-        "- share the returned commit id",
-        "- another agent reads onecontext://gcc/commit/{id} or calls gcc-context scope=commit_record",
+        "Forward a bounded slice of memory:",
+        "- callTool gcc-list-commits or gcc-search-commits to identify the relevant commit ids",
+        "- callTool gcc-export with lastN or fromCommitId/toCommitId",
+        "- share the returned segmentId",
+        "- another agent reads onecontext://segment/{id}/transcript or /events",
         "",
         "Privacy notes:",
         "- This server does not store chain-of-thought.",
@@ -55,6 +61,14 @@ function readFileIfExists(path) {
         throw new Error(`Not found: ${path}`);
     }
     return readText(path);
+}
+function currentBranch(cwd) {
+    try {
+        return loadState(cwd).currentBranch;
+    }
+    catch {
+        return "main";
+    }
 }
 export function createServerInstance(version) {
     const server = new McpServer({ name: "OneContext", version }, {
@@ -311,11 +325,7 @@ export function createServerInstance(version) {
             const b = branch ? String(branch) : undefined;
             if (b && !isSafeName(b))
                 throw new Error(`Invalid branch: ${b}`);
-            const statePath = `${gccRootDir(process.cwd())}/state.json`;
-            const current = pathExists(statePath)
-                ? JSON.parse(readText(statePath)).currentBranch || "main"
-                : "main";
-            const branchName = b || current;
+            const branchName = b || currentBranch(process.cwd());
             const record = commitMilestone({
                 cwd: process.cwd(),
                 branch: branchName,
@@ -432,6 +442,138 @@ export function createServerInstance(version) {
         }
         catch (err) {
             return { content: [{ type: "text", text: `gcc-context failed: ${String(err)}` }] };
+        }
+    });
+    server.registerTool("gcc-list-commits", {
+        title: "GCC List Commits",
+        description: "List commits in a branch with pagination.",
+        inputSchema: {
+            branch: z.string().optional().describe("Branch name (defaults to current)"),
+            limit: z.number().optional().default(20).describe("Max items to return"),
+            offset: z.number().optional().default(0).describe("Offset (0-based)"),
+            includeDetails: z.boolean().optional().default(false).describe("Include truncated details field"),
+            maxDetailChars: z.number().optional().default(500).describe("Max chars for details when includeDetails=true"),
+        },
+    }, async ({ branch, limit, offset, includeDetails, maxDetailChars }) => {
+        try {
+            const b = branch ? String(branch) : undefined;
+            if (b && !isSafeName(b))
+                throw new Error(`Invalid branch: ${b}`);
+            const branchName = b || currentBranch(process.cwd());
+            const items = listCommitRecords(process.cwd(), branchName, limit, offset).map((rec) => {
+                const base = {
+                    id: rec.id,
+                    ts: rec.ts,
+                    kind: rec.kind,
+                    branch: rec.branch,
+                    summary: rec.summary,
+                    git: rec.git?.insideWorkTree ? { branch: rec.git.branch, commitSha: rec.git.commitSha } : null,
+                };
+                if (includeDetails && rec.details) {
+                    base.details = truncateEnd(rec.details, maxDetailChars).text;
+                }
+                return base;
+            });
+            return { content: [{ type: "text", text: JSON.stringify({ branch: branchName, items }, null, 2) }] };
+        }
+        catch (err) {
+            return { content: [{ type: "text", text: `gcc-list-commits failed: ${String(err)}` }] };
+        }
+    });
+    server.registerTool("gcc-search-commits", {
+        title: "GCC Search Commits",
+        description: "Search commits by keyword over summary/details (simple substring match).",
+        inputSchema: {
+            query: z.string().describe("Search query (non-empty)"),
+            branch: z.string().optional().describe("Branch name (defaults to current)"),
+            limit: z.number().optional().default(10).describe("Max items to return"),
+            maxDetailChars: z.number().optional().default(500).describe("Max chars for details snippet"),
+        },
+    }, async ({ query, branch, limit, maxDetailChars }) => {
+        try {
+            const q = String(query || "").trim();
+            if (!q)
+                throw new Error("query must be non-empty");
+            const b = branch ? String(branch) : undefined;
+            if (b && !isSafeName(b))
+                throw new Error(`Invalid branch: ${b}`);
+            const branchName = b || currentBranch(process.cwd());
+            const hits = searchCommitRecords(process.cwd(), branchName, q, limit).map((rec) => ({
+                id: rec.id,
+                ts: rec.ts,
+                kind: rec.kind,
+                branch: rec.branch,
+                summary: rec.summary,
+                detailsSnippet: rec.details ? truncateEnd(rec.details, maxDetailChars).text : null,
+            }));
+            return { content: [{ type: "text", text: JSON.stringify({ branch: branchName, query: q, hits }, null, 2) }] };
+        }
+        catch (err) {
+            return { content: [{ type: "text", text: `gcc-search-commits failed: ${String(err)}` }] };
+        }
+    });
+    server.registerTool("gcc-export", {
+        title: "GCC Export",
+        description: "Export a bounded commit range into a shareable segment (transcript + events). Use lastN or fromCommitId/toCommitId.",
+        inputSchema: {
+            branch: z.string().optional().describe("Branch name (defaults to current)"),
+            lastN: z.number().optional().describe("Export the last N commits"),
+            fromCommitId: z.string().optional().describe("Start commit id (inclusive)"),
+            toCommitId: z.string().optional().describe("End commit id (inclusive)"),
+            includeMerges: z.boolean().optional().default(true).describe("Include merge commits"),
+            includeGitDiffStat: z.boolean().optional().default(true).describe("Include git diff --stat between range endpoints"),
+            includeGitPatch: z.boolean().optional().default(false).describe("Include full git diff patch between endpoints (may be large)"),
+            maxInlineChars: z.number().optional().default(4000).describe("Max inline chars before blob spill"),
+            attachToBranchLog: z.boolean().optional().default(true).describe("Append an export pointer to branch log"),
+        },
+    }, async ({ branch, lastN, fromCommitId, toCommitId, includeMerges, includeGitDiffStat, includeGitPatch, maxInlineChars, attachToBranchLog, }) => {
+        try {
+            const b = branch ? String(branch) : undefined;
+            if (b && !isSafeName(b))
+                throw new Error(`Invalid branch: ${b}`);
+            const branchName = b || currentBranch(process.cwd());
+            if (lastN === undefined && !fromCommitId && !toCommitId) {
+                throw new Error("Provide lastN or fromCommitId/toCommitId");
+            }
+            if (fromCommitId && !isSafeName(fromCommitId))
+                throw new Error(`Invalid fromCommitId: ${fromCommitId}`);
+            if (toCommitId && !isSafeName(toCommitId))
+                throw new Error(`Invalid toCommitId: ${toCommitId}`);
+            // Ensure .GCC exists, because segment storage lives there.
+            ensureDir(gccRootDir(process.cwd()));
+            ensureDir(gccSegmentsDir(process.cwd()));
+            const { segmentId, meta } = await exportCommitRange({
+                cwd: process.cwd(),
+                branch: branchName,
+                fromCommitId: fromCommitId || undefined,
+                toCommitId: toCommitId || undefined,
+                lastN: lastN || undefined,
+                includeMerges,
+                includeGitDiffStat,
+                includeGitPatch,
+                maxInlineChars,
+                attachToBranchLog,
+            });
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            ok: true,
+                            segmentId,
+                            resources: {
+                                meta: `onecontext://segment/${segmentId}/meta`,
+                                transcript: `onecontext://segment/${segmentId}/transcript`,
+                                events: `onecontext://segment/${segmentId}/events`,
+                            },
+                            meta,
+                        }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (err) {
+            return { content: [{ type: "text", text: `gcc-export failed: ${String(err)}` }] };
         }
     });
     server.registerTool("forward-codex-session-segment", {
