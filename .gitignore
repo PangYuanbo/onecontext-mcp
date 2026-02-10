@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+
+# Local GCC / OneContext artifacts (created in cwd during dev)
+.GCC/
+.onecontext/
