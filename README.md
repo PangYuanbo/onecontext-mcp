@@ -1,10 +1,10 @@
 # OneContext MCP
 
-Git-style context control for LLM agents, plus a practical way to forward Codex session segments as MCP resources.
+Git-style context control for LLM agents (GCC). Forwarding is done by creating GCC commits and sharing the commit id.
 
 This project MCP-ifies ideas from:
 - Git-Context-Controller (GCC): COMMIT / BRANCH / MERGE / CONTEXT
-- "Forward a slice of agent history" (e.g., Codex `sessions/*.jsonl`) into a shareable, structured segment
+- (Optional) importing a slice of agent history (e.g., Codex `sessions/*.jsonl`) into a shareable segment
 
 ## What It Does
 
@@ -15,8 +15,8 @@ This project MCP-ifies ideas from:
   - commit milestones
   - merge branches
   - retrieve context at multiple granularities
-  - forward a slice of a Codex `*.jsonl` session file into a segment (events + transcript)
-- Exposes MCP resources so another agent can read the forwarded segment by ID.
+  - (optional) import a slice of a Codex `*.jsonl` session file into a segment (events + transcript)
+- Exposes MCP resources so another agent can read a commit by id: `onecontext://gcc/commit/{id}`.
 
 ## File Layout
 
@@ -62,7 +62,7 @@ node dist/index.js
 - `gcc-commit`
 - `gcc-merge`
 - `gcc-context`
-- `forward-codex-session-segment`
+- `forward-codex-session-segment` (optional helper)
 
 ## MCP Resources
 
@@ -71,6 +71,7 @@ node dist/index.js
 - `onecontext://gcc/main`
 - `onecontext://gcc/state`
 - `onecontext://gcc/branches`
+- `onecontext://gcc/commit/{id}`
 - `onecontext://gcc/branch/{branch}/commit`
 - `onecontext://gcc/branch/{branch}/commits`
 - `onecontext://gcc/branch/{branch}/log/{tail}`
@@ -83,4 +84,4 @@ node dist/index.js
 ## Notes
 
 - This server stores plain-text / JSON artifacts on disk. It intentionally does **not** store chain-of-thought.
-- Large tool inputs/outputs (e.g., huge patches, base64 images) are truncated and/or moved into `.GCC/segments/<id>/blobs/`.
+- Large tool inputs/outputs are truncated in-place; when using `forward-codex-session-segment`, the original large payloads may also be saved as blobs under `.GCC/segments/<id>/blobs/`.

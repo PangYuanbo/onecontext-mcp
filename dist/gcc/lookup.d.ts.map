@@ -1,0 +1,1 @@
+{"version":3,"file":"lookup.d.ts","sourceRoot":"","sources":["../../src/gcc/lookup.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,YAAY,EAAE,MAAM,aAAa,CAAC;AAE3C,wBAAgB,gBAAgB,CAC9B,GAAG,EAAE,MAAM,EACX,QAAQ,EAAE,MAAM,GACf;IAAE,MAAM,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,YAAY,CAAA;CAAE,GAAG,IAAI,CA0BjD"}

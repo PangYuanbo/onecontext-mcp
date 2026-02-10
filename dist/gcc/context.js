@@ -1,6 +1,7 @@
 import { gccBranchesDir, gccBranchCommitMdPath, gccBranchCommitsJsonlPath, gccBranchLogJsonlPath, gccBranchMetadataPath, gccMainPath, } from "./paths.js";
 import { listDirNames, pathExists, readText } from "../util/fs.js";
 import { loadState } from "./state.js";
+import { findCommitRecord } from "./lookup.js";
 function tailLines(text, count) {
     const lines = text.split("\n").filter(Boolean);
     return lines.slice(-Math.max(0, count)).join("\n");
@@ -22,6 +23,12 @@ export function getContext(req) {
     }
     if (scope === "branches") {
         return listDirNames(gccBranchesDir(cwd));
+    }
+    if (scope === "commit_record") {
+        if (!req.commitId) {
+            throw new Error("commitId is required for scope=commit_record");
+        }
+        return findCommitRecord(cwd, req.commitId);
     }
     const b = branch || state.currentBranch;
     if (scope === "branch_head") {

@@ -20,6 +20,7 @@ import { checkoutBranch } from "../gcc/checkout.js";
 import { commitMilestone } from "../gcc/commit.js";
 import { mergeBranch } from "../gcc/merge.js";
 import { getContext } from "../gcc/context.js";
+import { findCommitRecord } from "../gcc/lookup.js";
 import { ensureDir, listDirNames, pathExists, readText } from "../util/fs.js";
 import { forwardCodexSessionSegment } from "../codex/forward.js";
 
@@ -29,7 +30,7 @@ function buildAboutText(): string {
     "It also supports forwarding slices of Codex session *.jsonl files into shareable segments.",
     "",
     "Core actions: gcc-init / gcc-branch / gcc-checkout / gcc-commit / gcc-merge / gcc-context",
-    "Sharing: forward-codex-session-segment + segment resources",
+    "Sharing: use gcc-commit to create a checkpoint, then share the commit id",
   ].join("\n");
 }
 
@@ -43,9 +44,10 @@ function buildInstructionsText(): string {
     "4) Merge experiments: gcc-merge",
     "5) Retrieve context: gcc-context or read resources under onecontext://gcc/...",
     "",
-    "Forward a Codex session slice:",
-    "- callTool forward-codex-session-segment with sessionPath + startLine/endLine",
-    "- then read onecontext://segment/{id}/transcript or /events",
+    "Forward memory to another agent:",
+    "- callTool gcc-commit (write a clean summary + evidence)",
+    "- share the returned commit id",
+    "- another agent reads onecontext://gcc/commit/{id} or calls gcc-context scope=commit_record",
     "",
     "Privacy notes:",
     "- This server does not store chain-of-thought.",
@@ -212,6 +214,25 @@ export function createServerInstance(version: string) {
       if (!isSafeName(b)) throw new Error(`Invalid branch: ${b}`);
       return {
         contents: [{ uri: uri.href, text: readFileIfExists(gccBranchMetadataPath(process.cwd(), b)) }],
+      };
+    }
+  );
+
+  server.registerResource(
+    "onecontext-gcc-commit",
+    new ResourceTemplate("onecontext://gcc/commit/{id}", { list: undefined }),
+    {
+      title: "GCC Commit (By ID)",
+      description: "Lookup a commit record across all branches by commit id",
+      mimeType: "application/json",
+    },
+    async (uri, { id }) => {
+      const commitId = String(id);
+      if (!isSafeName(commitId)) throw new Error(`Invalid commit id: ${commitId}`);
+      const found = findCommitRecord(process.cwd(), commitId);
+      if (!found) throw new Error(`Commit not found: ${commitId}`);
+      return {
+        contents: [{ uri: uri.href, text: JSON.stringify(found, null, 2) }],
       };
     }
   );
@@ -502,6 +523,7 @@ export function createServerInstance(version: string) {
             "branches",
             "branch_head",
             "branch_commits",
+            "commit_record",
             "commit_md",
             "log_tail",
             "metadata",
@@ -509,16 +531,19 @@ export function createServerInstance(version: string) {
           .optional()
           .default("status"),
         branch: z.string().optional().describe("Branch name (optional)"),
+        commitId: z.string().optional().describe("Commit id (for commit_record)"),
         tail: z.number().optional().default(50).describe("Tail line count (for log_tail)"),
       },
     },
-    async ({ scope, branch, tail }) => {
+    async ({ scope, branch, commitId, tail }) => {
       try {
         if (branch && !isSafeName(branch)) throw new Error(`Invalid branch: ${branch}`);
+        if (commitId && !isSafeName(commitId)) throw new Error(`Invalid commitId: ${commitId}`);
         const result = getContext({
           cwd: process.cwd(),
           scope,
           branch,
+          commitId,
           tail,
         });
         const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);

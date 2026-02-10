@@ -8,6 +8,7 @@ import {
 } from "./paths.js";
 import { listDirNames, pathExists, readText } from "../util/fs.js";
 import { loadState } from "./state.js";
+import { findCommitRecord } from "./lookup.js";
 
 export type ContextScope =
   | "status"
@@ -15,6 +16,7 @@ export type ContextScope =
   | "branches"
   | "branch_head"
   | "branch_commits"
+  | "commit_record"
   | "commit_md"
   | "log_tail"
   | "metadata";
@@ -23,6 +25,7 @@ export type ContextRequest = {
   cwd: string;
   scope: ContextScope;
   branch?: string;
+  commitId?: string;
   tail?: number;
 };
 
@@ -51,6 +54,13 @@ export function getContext(req: ContextRequest): unknown {
 
   if (scope === "branches") {
     return listDirNames(gccBranchesDir(cwd));
+  }
+
+  if (scope === "commit_record") {
+    if (!req.commitId) {
+      throw new Error("commitId is required for scope=commit_record");
+    }
+    return findCommitRecord(cwd, req.commitId);
   }
 
   const b = branch || state.currentBranch;

@@ -1,8 +1,9 @@
-export type ContextScope = "status" | "main" | "branches" | "branch_head" | "branch_commits" | "commit_md" | "log_tail" | "metadata";
+export type ContextScope = "status" | "main" | "branches" | "branch_head" | "branch_commits" | "commit_record" | "commit_md" | "log_tail" | "metadata";
 export type ContextRequest = {
     cwd: string;
     scope: ContextScope;
     branch?: string;
+    commitId?: string;
     tail?: number;
 };
 export declare function getContext(req: ContextRequest): unknown;
