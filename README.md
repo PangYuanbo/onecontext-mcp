@@ -78,9 +78,9 @@ node dist/index.js
 - `onecontext://segment/{id}/meta`
 - `onecontext://segment/{id}/transcript`
 - `onecontext://segment/{id}/events`
+- `onecontext://segment/{id}/blob/{sha256}`
 
 ## Notes
 
 - This server stores plain-text / JSON artifacts on disk. It intentionally does **not** store chain-of-thought.
 - Large tool inputs/outputs (e.g., huge patches, base64 images) are truncated and/or moved into `.GCC/segments/<id>/blobs/`.
-
