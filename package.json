@@ -1,5 +1,5 @@
 {
-  "name": "onecontext-mcp",
+  "name": "@pangyuanbo/onecontext-mcp",
   "version": "0.1.0",
   "description": "OneContext MCP: Git-style context controller (GCC) + sharing Codex session segments as MCP resources",
   "license": "MIT",
@@ -25,6 +25,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/PangYuanbo/onecontext-mcp.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "bugs": {
     "url": "https://github.com/PangYuanbo/onecontext-mcp/issues"

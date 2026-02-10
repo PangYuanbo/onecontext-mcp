@@ -50,6 +50,30 @@ npm i
 npm run build
 ```
 
+## Install As A Package (Private, GitHub Packages)
+
+This repo is configured to publish to GitHub Packages as `@pangyuanbo/onecontext-mcp`.
+
+1) Configure npm auth (example):
+
+```bash
+npm config set @pangyuanbo:registry https://npm.pkg.github.com
+```
+
+Your `~/.npmrc` must also include an auth token, for example:
+
+```text
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+2) Install (global) or run via npx:
+
+```bash
+npm i -g @pangyuanbo/onecontext-mcp
+# or:
+npx @pangyuanbo/onecontext-mcp
+```
+
 ## Run (MCP stdio)
 
 ```bash
