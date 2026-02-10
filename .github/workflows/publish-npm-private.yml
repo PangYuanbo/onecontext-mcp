@@ -2,6 +2,15 @@ name: Publish (npm private)
 
 on:
   workflow_dispatch:
+    inputs:
+      access:
+        description: "npm access level"
+        required: true
+        default: "restricted"
+        type: choice
+        options:
+          - restricted
+          - public
   push:
     tags:
       - "npm-v*"
@@ -29,8 +38,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Publish (restricted)
+      - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access restricted --registry https://registry.npmjs.org
-
+          NPM_ACCESS: ${{ github.event.inputs.access || 'restricted' }}
+        run: npm publish --access "$NPM_ACCESS" --registry https://registry.npmjs.org

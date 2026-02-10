@@ -106,6 +106,7 @@ Create a tag like `npm-stub-v0.0.1` and push it, or run the workflow manually:
 Create a tag like `npm-v0.1.1` and push it, or run the workflow manually:
 
 - Workflow: `Publish (npm private)`
+  - Input `access`: `restricted` (private) or `public`
 
 ## Run (MCP stdio)
 
