@@ -331,6 +331,7 @@ export function createServerInstance(version) {
                             ok: true,
                             commit: record,
                             resources: {
+                                commitById: `onecontext://gcc/commit/${record.id}`,
                                 commitMd: `onecontext://gcc/branch/${branchName}/commit`,
                                 commits: `onecontext://gcc/branch/${branchName}/commits`,
                                 logTail: `onecontext://gcc/branch/${branchName}/log/200`,
