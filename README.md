@@ -76,38 +76,6 @@ npm i -g @pangyuanbo/onecontext-mcp
 npx @pangyuanbo/onecontext-mcp
 ```
 
-## Publish To npm (Name Squat + Private)
-
-Reality check:
-
-- npm does **not** support private **unscoped** packages. Unscoped names (like `onecontext-mcp`) are always public.
-- npm private publishing requires a scoped package (like `@pangyuanbo/onecontext-mcp`) and an npm paid plan.
-
-This repo supports both:
-
-1) `onecontext-mcp` (public stub, reserves the unscoped name)
-2) `@pangyuanbo/onecontext-mcp` (the real server, publish as private/restricted if your npm plan allows)
-
-### GitHub Actions Secrets
-
-Add a repo secret:
-
-- `NPM_TOKEN`: an npm access token with publish permissions
-
-### Publish Stub (reserve `onecontext-mcp`)
-
-Create a tag like `npm-stub-v0.0.1` and push it, or run the workflow manually:
-
-- Workflow: `Publish (npm stub)`
-- Package dir: `npm-stub/`
-
-### Publish Real Package (private/restricted)
-
-Create a tag like `npm-v0.1.1` and push it, or run the workflow manually:
-
-- Workflow: `Publish (npm private)`
-  - Input `access`: `restricted` (private) or `public`
-
 ## Run (MCP stdio)
 
 ```bash
